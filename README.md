@@ -50,6 +50,7 @@ Read more in depth in this Tech Community blog: [Azure Snapshots: Simplify Manag
 - **Filtering:** Filter snapshots by specific subscription/s, resource group/s or specific resource/s.
 - **Age-Based Filtering:** View snapshots by age creation (_1, 2, 3, 4, 5, 6 ,7, 14, 30, 60, 90 days ago_), making it easy to identify old ones.
 - **Snapshot Deletion:** Remove outdated or unnecessary snapshots with just a few clicks directly from the workbook.
+  - Delete multiple snapshots directly from the workbook.
 
 ### Age-Based Filtering
 
@@ -61,14 +62,19 @@ To identify old snapshots you can use the 'Snapshot Age' filter.
 - 'x days ago' will apply the filter to present only snapshots older than x days.
 
 ### Snapshot Deletion
-To enable the '⛔Delete Snapshot' option, you need first to enable it on the filter pane.
+To enable the '⛔ Delete Snapshot' option and the '⛔ Delete Multiple Resources' option, you need first to enable it on the filter pane.
 
 ![image](https://github.com/user-attachments/assets/0d3d2419-a07b-4316-9e21-f5d47b2cc16f)
 
-Now you can click on the '⛔Delete Snapshot' to delete the selected snapshot.
+Now you can click on the '⛔ Delete Snapshot' to delete the selected snapshot.
 
 ![image](https://github.com/user-attachments/assets/f770a82b-f689-4cfb-8529-5972bba8191b)
 
 Please review the resource information thoroughly before continuing with the deletion.
 
-![image](https://github.com/user-attachments/assets/4657444d-8962-462a-8a5c-29036105ec40)
+![image](https://github.com/user-attachments/assets/3abed23c-c25e-4efa-9432-79b25eef93c2)
+
+If you want to delete multipe snapshots, you need to select them from the snapshot table and then click on the button '⛔ Delete Selected Resource'
+
+![image](https://github.com/user-attachments/assets/0b5d0c22-1aab-4fc5-85fc-54a38c9f6bf4)
+
