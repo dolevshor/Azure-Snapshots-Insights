@@ -6,12 +6,15 @@
       "content": {
         "json": "# Azure Snapshots Insights\r\nUse this workbook to analyze and monitor all your Azure Snapshot resources."
       },
-      "name": "text - 12"
+      "name": "text - Main"
     },
     {
       "type": 9,
       "content": {
         "version": "KqlParameterItem/1.0",
+        "crossComponentResources": [
+          "{Subscription}"
+        ],
         "parameters": [
           {
             "id": "1f74ed9a-e3ed-498d-bd5b-f68f3836a117",
@@ -23,12 +26,9 @@
             "multiSelect": true,
             "quote": "'",
             "delimiter": ",",
-            "query": "where type =~ 'microsoft.operationalinsights/workspaces'\r\n| summarize Count = count() by subscriptionId\r\n| order by Count desc\r\n| extend Rank = row_number()\r\n| project value = subscriptionId, label = subscriptionId, selected = Rank == 1",
+            "query": "where type =~ \"microsoft.compute/snapshots\"\r\n| summarize Count = count() by subscriptionId\r\n| order by Count desc\r\n| extend Rank = row_number()\r\n| project value = subscriptionId, label = subscriptionId, selected = Rank == 1",
             "crossComponentResources": [
               "value::selected"
-            ],
-            "value": [
-              "value::all"
             ],
             "typeSettings": {
               "additionalResourceOptions": [
@@ -37,7 +37,10 @@
               "showDefault": false
             },
             "queryType": 1,
-            "resourceType": "microsoft.resourcegraph/resources"
+            "resourceType": "microsoft.resourcegraph/resources",
+            "value": [
+              "value::all"
+            ]
           },
           {
             "id": "df4a3e18-45e6-41fd-ab9b-903226867436",
@@ -117,13 +120,15 @@
               "additionalResourceOptions": [],
               "showDefault": false
             },
-            "queryType": 8
+            "queryType": 8,
+            "value": "true"
           }
         ],
         "style": "above",
-        "queryType": 8
+        "queryType": 1,
+        "resourceType": "microsoft.resourcegraph/resources"
       },
-      "name": "Log Analytics Workspace parameters",
+      "name": "Workbook Parameters",
       "styleSettings": {
         "margin": "15px 0 0 0"
       }
@@ -173,7 +178,7 @@
                 }
               ]
             },
-            "name": "Navigation links",
+            "name": "links - Navigation links",
             "styleSettings": {
               "margin": "10px 0 0 0"
             }
@@ -198,6 +203,14 @@
                     "version": "KqlItem/1.0",
                     "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| extend snapshotType = case(properties.incremental == true, \"Incremental\", properties.incremental == false, \"Full\", \"\")\r\n| extend DeleteResource = id, SnapshotName = name, SnapshotId = id\r\n| extend IsActive = {EnableDeletion}\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend Details = pack_all()\r\n| project id, sourceDisk = properties.creationData.sourceResourceId, diskSizeGB = properties.diskSizeGB, resourceGroup, location, apiVersion, sku = sku.name, snapshotType, TimeCreated, publicNetworkAccess = properties.publicNetworkAccess, networkAccessPolicy = properties.networkAccessPolicy, subscriptionId, tags, DeleteResource = iff(IsActive == true, DeleteResource, \"\"), SnapshotName, SnapshotId, Details",
                     "size": 3,
+                    "exportMultipleValues": true,
+                    "exportedParameters": [
+                      {
+                        "fieldName": "id",
+                        "parameterName": "resources",
+                        "parameterType": 5
+                      }
+                    ],
                     "queryType": 1,
                     "resourceType": "microsoft.resourcegraph/resources",
                     "crossComponentResources": [
@@ -254,11 +267,51 @@
                         },
                         {
                           "columnMatch": "publicNetworkAccess",
-                          "formatter": 1
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Enabled",
+                                "representation": "Globe",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "Disable",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
                         },
                         {
                           "columnMatch": "networkAccessPolicy",
-                          "formatter": 1
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "AllowAll",
+                                "representation": "Globe",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "AllowPrivate",
+                                "representation": "Lock",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "Disable",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
                         },
                         {
                           "columnMatch": "subscriptionId",
@@ -277,14 +330,14 @@
                               "params": [
                                 {
                                   "key": "api-version",
-                                  "value": "[\"apiVersion\"]"
+                                  "value": "2021-04-01"
                                 }
                               ],
                               "body": "{\r\n  \"tags\": {\r\n    \"OrphanedResource\": \"true\"\r\n  }\r\n}",
                               "isLongOperation": true,
                               "httpMethod": "DELETE",
                               "title": "Delete Snapshot",
-                              "description": "# ⛔ **Attention!** ⛔\n\n## <span style=\"color: red\">**This action will permanently delete this snapshot!**</span>\n\n## **[\"SnapshotName\"]**\n\n## <ins>Resource Details:<ins>\n\n|                        |                       |\n| ---------------------- | --------------------- |\n| Name                   | **[\"SnapshotName\"]**  |\n| Resource Group         | **[\"resourceGroup\"]** |\n| Location               | **[\"location\"]**      |\n| Snapshot type          | **[\"snapshotType\"]**  |\n| Source disk size (GiB) | **[\"diskSizeGB\"]**    |\n\n\n### Recommended steps before deletion\n\n- Review the resource information thoroughly before continuing with the deletion.\n- Ensure that this snapshot is not currently in use.\n\n\n### Required Permissions\n\n- To complete this action, you must have _Contributor_ permissions for the Resource Group where the snapshot located.",
+                              "description": "# ⛔ **Attention!** ⛔\n\n## This action will permanently delete the following snapshot:\n\n|                        |                       |\n| ---------------------- | --------------------- |\n| Name                   | **[\"SnapshotName\"]**  |\n| Resource Group         | **[\"resourceGroup\"]** |\n| Location               | **[\"location\"]**      |\n| Snapshot type          | **[\"snapshotType\"]**  |\n| Source disk size (GiB) | **[\"diskSizeGB\"]**    |\n\n\n### Recommended steps before deletion\n\n- Review the resource information thoroughly before continuing with the deletion.\n- Ensure that this snapshot is not currently in use.\n\n\n### Required Permissions\n\n- To complete this action, you must have _Contributor_ permissions for the Resource Group where the snapshot located.",
                               "actionName": "Delete Snapshot",
                               "runLabel": "Delete Snapshot"
                             }
@@ -430,6 +483,64 @@
                     ]
                   },
                   "name": "query - All App Service Plans"
+                },
+                {
+                  "type": 12,
+                  "content": {
+                    "version": "NotebookGroup/1.0",
+                    "groupType": "editable",
+                    "items": [
+                      {
+                        "type": 1,
+                        "content": {
+                          "json": "### Delete Multiple Resources\r\n\r\nTo delete multiple resources, select them from the table above and click the `⛔ Delete Selected Resources` button below.",
+                          "style": "info"
+                        },
+                        "name": "text - Delete Multiple Resources"
+                      },
+                      {
+                        "type": 11,
+                        "content": {
+                          "version": "LinkItem/1.0",
+                          "style": "list",
+                          "links": [
+                            {
+                              "id": "93355de1-d3fe-4100-b3fd-60afe2ef5a4b",
+                              "cellValue": "{resources}",
+                              "linkTarget": "ArmAction",
+                              "linkLabel": "⛔ Delete Selected Resources",
+                              "style": "primary",
+                              "linkIsContextBlade": true,
+                              "armActionContext": {
+                                "path": "/{resources}",
+                                "headers": [],
+                                "params": [
+                                  {
+                                    "key": "api-version",
+                                    "value": "2021-04-01"
+                                  }
+                                ],
+                                "isLongOperation": true,
+                                "httpMethod": "DELETE",
+                                "applyToMultipleResourcesParameter": "resources",
+                                "title": "Delete Resources",
+                                "description": "# ⛔ **Attention!** ⛔\n\n## This action will permanently delete the following snapshots:\n\n{resources:grid}\n\n### Recommended steps before deletion\n\n- Review the resource information thoroughly before continuing with the deletion.\n- Ensure that this snapshots is not currently in use.\n\n\n### Required Permissions\n\n- To complete this action, you must have _Contributor_ permissions for the Resource Group where the snapshots located.",
+                                "actionName": "Delete Resources",
+                                "runLabel": "Delete Resources"
+                              }
+                            }
+                          ]
+                        },
+                        "name": "links - Delete Multiple Resources"
+                      }
+                    ]
+                  },
+                  "conditionalVisibility": {
+                    "parameterName": "EnableDeletion",
+                    "comparison": "isEqualTo",
+                    "value": "true"
+                  },
+                  "name": "group - Delete Multiple Resources"
                 }
               ]
             },
@@ -438,7 +549,7 @@
               "comparison": "isEqualTo",
               "value": "Overview"
             },
-            "name": "Overview Group"
+            "name": "group - Overview Group"
           },
           {
             "type": 12,
@@ -776,7 +887,7 @@
               "comparison": "isEqualTo",
               "value": "Inventory"
             },
-            "name": "Inventory Group"
+            "name": "group - Inventory Group"
           }
         ]
       },
@@ -784,13 +895,11 @@
         "parameterName": "Subscription",
         "comparison": "isNotEqualTo"
       },
-      "name": "Azure App Services"
+      "name": "group - Azure Snapshots"
     }
   ],
   "fallbackResourceIds": [
     "Azure Monitor"
   ],
-  "workbookPin": "Overview",
-  "fromTemplateId": "community-Workbooks/LogAnalytics Workspace/AtScale",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
 }
