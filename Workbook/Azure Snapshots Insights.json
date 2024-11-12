@@ -191,6 +191,7 @@
                     "version": "KqlItem/1.0",
                     "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| extend snapshotType = case(properties.incremental == true, \"Incremental\", properties.incremental == false, \"Full\", \"\")\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend Details = pack_all()\r\n| project id, sourceDisk = properties.creationData.sourceResourceId, diskSizeGB = properties.diskSizeGB, resourceGroup, location, apiVersion, sku = sku.name, snapshotType, TimeCreated, publicNetworkAccess = properties.publicNetworkAccess, networkAccessPolicy = properties.networkAccessPolicy, subscriptionId, tags, Details",
                     "size": 3,
+                    "showExportToExcel": true,
                     "exportMultipleValues": true,
                     "exportedParameters": [
                       {
